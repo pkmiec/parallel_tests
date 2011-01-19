@@ -11,14 +11,9 @@ describe ParallelSpecs do
       ParallelSpecs.stub!(:bundler_enabled?).and_return false
     end
 
-    it "uses TEST_ENV_NUMBER=blank when called for process 0" do
-      ParallelSpecs.should_receive(:open).with{|x,y|x=~/TEST_ENV_NUMBER= /}.and_return mocked_process
-      ParallelSpecs.run_tests(['xxx'],0,'')
-    end
-
-    it "uses TEST_ENV_NUMBER=2 when called for process 1" do
-      ParallelSpecs.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER=2/}.and_return mocked_process
-      ParallelSpecs.run_tests(['xxx'],1,'')
+    it "uses TEST_ENV_NUMBER=N when called for process N" do
+      ParallelSpecs.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER=4/}.and_return mocked_process
+      ParallelSpecs.run_tests(['xxx'],4,'')
     end
 
     it "runs with color when called from cmdline" do

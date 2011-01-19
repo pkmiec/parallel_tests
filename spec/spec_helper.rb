@@ -41,6 +41,7 @@ end
 
 def test_tests_in_groups(klass, folder, suffix)
   test_root = "#{FAKE_RAILS_ROOT}/#{folder}"
+  pwd = Dir.pwd
 
   describe :tests_in_groups do
     before :all do
@@ -56,32 +57,31 @@ def test_tests_in_groups(klass, folder, suffix)
       @log = "#{FAKE_RAILS_ROOT}/tmp/parallel_profile.log"
       `mkdir #{File.dirname(@log)}`
       `rm -f #{@log}`
+      
+      Dir.chdir(FAKE_RAILS_ROOT)
+    end
+
+    after :all do
+      Dir.chdir(pwd)
     end
 
     it "groups when given an array of files" do
-      list_of_files = Dir["#{test_root}/**/*#{suffix}"]
-      found = klass.tests_with_runtime(list_of_files)
-      found.should =~ list_of_files.map{ |file| [file, File.stat(file).size]}
-    end
-
-    it "finds all tests" do
-      found = klass.tests_in_groups(test_root, 1)
-      all = [ Dir["#{test_root}/**/*#{suffix}"] ]
-      (found.flatten - all.flatten).should == []
+      found = klass.tests_with_runtime(@files)
+      found.should =~ @files.map{ |file| [file, File.stat(file).size]}
     end
 
     it "partitions them into groups by equal size" do
-      groups = klass.tests_in_groups(test_root, 2)
+      groups = klass.tests_in_groups(@files, 2)
       groups.map{|g| size_of(g)}.should == [400, 400]
     end
 
     it 'should partition correctly with a group size of 4' do
-      groups = klass.tests_in_groups(test_root, 4)
+      groups = klass.tests_in_groups(@files, 4)
       groups.map{|g| size_of(g)}.should == [200, 200, 200, 200]
     end
 
     it 'should partition correctly with an uneven group size' do
-      groups = klass.tests_in_groups(test_root, 3)
+      groups = klass.tests_in_groups(@files, 3)
       groups.map{|g| size_of(g)}.should =~ [300, 300, 200]
     end
 
@@ -91,7 +91,7 @@ def test_tests_in_groups(klass, folder, suffix)
         f.puts "#{@files[0]}:10"
       end
 
-      groups = klass.tests_in_groups(test_root, 2)
+      groups = klass.tests_in_groups(@files, 2)
       groups.size.should == 2
       # 10 + 5 + 3 + 1 = 19
       groups[0].should == [@files[0],@files[5],@files[3],@files[1]]
@@ -101,7 +101,6 @@ def test_tests_in_groups(klass, folder, suffix)
 
     it "partitions by round-robin when not sorting" do
       files = ["file1.rb", "file2.rb", "file3.rb", "file4.rb"]
-      klass.should_receive(:find_tests).and_return(files)
       groups = klass.tests_in_groups(files, 2, :no_sort => true)
       groups[0].should == ["file1.rb", "file3.rb"]
       groups[1].should == ["file2.rb", "file4.rb"]

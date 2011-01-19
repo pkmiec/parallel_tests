@@ -42,7 +42,4 @@ class ParallelSpecs < ParallelTests
     ($stdout.tty? ? 'RSPEC_COLOR=1 ; export RSPEC_COLOR ;' : '')
   end
 
-  def self.test_suffix
-    "_spec.rb"
-  end
 end

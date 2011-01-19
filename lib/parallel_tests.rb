@@ -20,11 +20,11 @@ class ParallelTests
   end
 
   # finds all tests and partitions them into groups
-  def self.tests_in_groups(root, num_groups, options={})
+  def self.tests_in_groups(files, num_groups, options={})
     if options[:no_sort] == true
-      Grouper.in_groups(find_tests(root), num_groups)
+      Grouper.in_groups(files, num_groups)
     else
-      Grouper.in_even_groups_by_size(tests_with_runtime(root), num_groups)
+      Grouper.in_even_groups_by_size(tests_with_runtime(files), num_groups)
     end
   end
 
@@ -35,7 +35,7 @@ class ParallelTests
   end
 
   def self.execute_command(cmd, process_number)
-    cmd = "TEST_ENV_NUMBER=#{test_env_number(process_number)} ; export TEST_ENV_NUMBER; #{cmd}"
+    cmd = "TEST_ENV_NUMBER=#{process_number} ; export TEST_ENV_NUMBER; #{cmd}"
     f = open("|#{cmd}", 'r')
     all = ''
     while char = f.getc
@@ -59,10 +59,6 @@ class ParallelTests
   def self.failed?(results)
     return true if results.empty?
     !! results.detect{|line| line_is_failure?(line)}
-  end
-
-  def self.test_env_number(process_number)
-    process_number == 0 ? '' : process_number + 1
   end
 
   protected
@@ -91,13 +87,8 @@ class ParallelTests
     line =~ /(\d{2,}|[1-9]) (failure|error)/
   end
 
-  def self.test_suffix
-    "_test.rb"
-  end
-
-  def self.tests_with_runtime(root)
-    tests = find_tests(root)
-    runtime_file = File.join(root,'..','tmp','parallel_profile.log')
+  def self.tests_with_runtime(tests)
+    runtime_file = File.join('tmp','parallel_profile.log')
     lines = File.read(runtime_file).split("\n") rescue []
 
     # use recorded test runtime if we got enough data
@@ -113,11 +104,4 @@ class ParallelTests
     end
   end
 
-  def self.find_tests(root)
-    if root.is_a?(Array)
-      root
-    else
-      Dir["#{root}**/**/*#{self.test_suffix}"]
-    end
-  end
 end

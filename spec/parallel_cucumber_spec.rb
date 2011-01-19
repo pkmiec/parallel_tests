@@ -10,14 +10,9 @@ describe ParallelCucumber do
       File.stub!(:file?).with('script/cucumber').and_return true
     end
 
-    it "uses TEST_ENV_NUMBER=blank when called for process 0" do
-      ParallelCucumber.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER= /}.and_return mocked_process
-      ParallelCucumber.run_tests(['xxx'],0,'')
-    end
-
-    it "uses TEST_ENV_NUMBER=2 when called for process 1" do
-      ParallelCucumber.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER=2/}.and_return mocked_process
-      ParallelCucumber.run_tests(['xxx'],1,'')
+    it "uses TEST_ENV_NUMBER=N when called for process N" do
+      ParallelCucumber.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER=4/}.and_return mocked_process
+      ParallelCucumber.run_tests(['xxx'],4,'')
     end
 
     it "returns the output" do

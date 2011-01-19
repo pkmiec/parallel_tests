@@ -19,10 +19,6 @@ class ParallelCucumber < ParallelTests
 
   protected
 
-  def self.test_suffix
-    ".feature"
-  end
-
   def self.line_is_result?(line)
     line =~ /^\d+ (steps|scenarios)/
   end

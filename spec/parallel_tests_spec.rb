@@ -26,14 +26,10 @@ describe ParallelTests do
   end
 
   describe :run_tests do
-    it "uses TEST_ENV_NUMBER=blank when called for process 0" do
-      ParallelTests.should_receive(:open).with{|x,y|x=~/TEST_ENV_NUMBER= /}.and_return mocked_process
-      ParallelTests.run_tests(['xxx'],0,'')
-    end
 
-    it "uses TEST_ENV_NUMBER=2 when called for process 1" do
-      ParallelTests.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER=2/}.and_return mocked_process
-      ParallelTests.run_tests(['xxx'],1,'')
+    it "uses TEST_ENV_NUMBER=N when called for process N" do
+      ParallelTests.should_receive(:open).with{|x,y| x=~/TEST_ENV_NUMBER=4/}.and_return mocked_process
+      ParallelTests.run_tests(['xxx'],4,'')
     end
 
     it "uses options" do

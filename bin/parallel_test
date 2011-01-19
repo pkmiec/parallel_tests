@@ -9,7 +9,7 @@ require "parallel_tests"
 options = {}
 OptionParser.new do |opts|
   opts.banner = <<BANNER
-Run all tests in parallel, giving each process ENV['TEST_ENV_NUMBER'] ('', '2', '3', ...)
+Run all tests in parallel, giving each process ENV['TEST_ENV_NUMBER'] ('0', '1', '2', ...)
 
 [optional] Only run selected files & folders:
     parallel_test test/bar test/baz/xxx_text.rb
@@ -17,7 +17,7 @@ Run all tests in parallel, giving each process ENV['TEST_ENV_NUMBER'] ('', '2', 
 Options are:
 BANNER
   opts.on("-n [PROCESSES]", Integer, "How many processes to use, default: available CPUs"){|n| options[:count] = n }
-  opts.on("-p", '--path [PATH]', "run tests inside this path only"){|path| options[:path_prefix] = path }
+  opts.on("-p", '--pattern [PATTERN]', "run tests matching the pattern"){|pattern| options[:file_pattern] = pattern }
   opts.on("--no-sort", "do not sort files before running them"){ |no_sort| options[:no_sort] = no_sort }
   opts.on("-m [FLOAT]", "--multiply-processes [FLOAT]", Float, "use given number as a multiplier of processes to run"){ |multiply| options[:multiply] = multiply }
   opts.on("-r", '--root [PATH]', "execute test commands from this path"){|path| options[:root] = path }
@@ -40,10 +40,10 @@ if options[:execute]
   end.flatten
   abort if results.any?{|r| r[:exit_status] != 0 }
 else
-  lib, name, task = {
-    'test' => ["tests", "test", "test"],
-    'spec' => ["specs", "spec", "spec"],
-    'features' => ["cucumber", "feature", "features"]
+  lib, name, task, test_suffix = {
+    'test'     => ["tests", "test", "test", "_test.rb"],
+    'spec'     => ["specs", "spec", "spec", "_spec.rb"],
+    'features' => ["cucumber", "feature", "features", ".feature"]
   }[options[:type]||'test']
 
   require "parallel_#{lib}"
@@ -51,34 +51,39 @@ else
 
   start = Time.now
 
-  tests_folder = File.join(task, options[:path_prefix].to_s)
-  tests_folder = File.join(options[:root], tests_folder) unless options[:root].to_s.empty?
+  files = options[:files] || begin
+    root = "."
+    root = File.join(options[:root], root) unless options[:root].to_s.empty?
+    Dir.chdir(root) do
+      pattern = options[:file_pattern] || "**/*#{test_suffix}"
+      Dir.glob(File.join(task, pattern))
+    end
+  end
 
-  groups = klass.tests_in_groups(options[:files] || tests_folder, num_processes, :no_sort => options[:no_sort])
+  abort "No #{name} files found!" if files.empty?
+
+  groups = klass.tests_in_groups(files, num_processes, :no_sort => options[:no_sort])
   num_processes = groups.size
 
-  #adjust processes to groups
-  abort "no #{name}s found!" if groups.size == 0
-
-  num_tests = groups.inject(0){|sum,item| sum + item.size }
-  puts "#{num_processes} processes for #{num_tests} #{name}s, ~ #{num_tests / groups.size} #{name}s per process"
+  num_tests = groups.inject(0) {|sum,item| sum + item.size }
+  puts "#{num_processes} processes for #{num_tests} #{name} files, ~ #{num_tests / groups.size} #{name} files per process"
 
   output = Parallel.map(groups, :in_processes => num_processes) do |group|
     klass.run_tests(group, groups.index(group), options[:test_options])
   end
 
-  #parse and print results
+  # parse and print results
   results = klass.find_results(output*"")
   puts ""
   puts "Results:"
   results.each{|r| puts r}
 
-  #report total time taken
+  # report total time taken
   puts ""
   puts "Took #{Time.now - start} seconds"
 
-  #exit with correct status code
+  # exit with correct status code
   # - rake parallel:test && echo 123 ==> 123 should not show up when test failed
   # - rake parallel:test db:reset ==> works when tests succeed
-  abort "#{name.capitalize}s Failed" if klass.failed?(results)
+  abort "#{name.capitalize} Files Failed" if klass.failed?(results)
 end

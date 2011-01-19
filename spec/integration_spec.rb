@@ -42,7 +42,7 @@ describe 'CLI' do
     result.should include('TEST2')
 
     # all results present
-    result.scan('1 example, 0 failure').size.should == 4 # 2 results + 2 result summary
+    result.scan('1 example, 0 failure').size.should == 4 # 2 results + 2 summary
     result.scan(/Finished in \d+\.\d+ seconds/).size.should == 2
     result.scan(/Took \d+\.\d+ seconds/).size.should == 1 # parallel summary
 
@@ -56,13 +56,13 @@ describe 'CLI' do
 
     result.scan('1 example, 1 failure').size.should == 2
     result.scan('1 example, 0 failure').size.should == 2
-    result.should =~ /specs failed/i
+    result.should =~ /spec files failed/i
     result.should_not include('i ran!')
   end
 
   it "can exec given commands with ENV['TEST_ENV_NUM']" do
     result = `#{executable} -e 'ruby -e "puts ENV[:TEST_ENV_NUMBER.to_s].inspect"' -n 4`
-    result.split("\n").sort.should == %w["" "2" "3" "4"]
+    result.split("\n").sort.should == %w["0" "1" "2" "3"]
   end
 
   it "exists with success if all sub-processes returned success" do

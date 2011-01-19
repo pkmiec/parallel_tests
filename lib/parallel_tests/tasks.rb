@@ -38,12 +38,12 @@ namespace :parallel do
 
   ['test', 'spec', 'features'].each do |type|
     desc "run #{type} in parallel with parallel:#{type}[num_cpus]"
-    task type, :count, :path_prefix, :options do |t,args|
+    task type, :count, :file_pattern, :options do |t,args|
       $LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), '..'))
       require "parallel_tests"
-      count, prefix, options = ParallelTests.parse_rake_args(args)
+      count, file_pattern, options = ParallelTests.parse_rake_args(args)
       executable = File.join(File.dirname(__FILE__), '..', '..', 'bin', 'parallel_test')
-      command = "#{executable} --type #{type} -n #{count} -p '#{prefix}' -r '#{Rails.root}' -o '#{options}'"
+      command = "#{executable} --type #{type} -n #{count} -p '#{file_pattern}' -r '#{Rails.root}' -o '#{options}'"
       abort unless system(command) # allow to chain tasks e.g. rake parallel:spec parallel:features
     end
   end

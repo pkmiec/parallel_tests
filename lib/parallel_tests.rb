@@ -11,7 +11,7 @@ class ParallelTests
     options = ""
     if args[:count].to_s =~ /^\d*$/ # number or empty
       num_processes = args[:count] unless args[:count].to_s.empty?
-      prefix = args[:path_prefix]
+      prefix = args[:file_pattern]
       options = args[:options] if args[:options]
     else # something stringy
       prefix = args[:count]

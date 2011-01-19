@@ -32,7 +32,6 @@ namespace :parallel do
   # just load the schema (good for integration server <-> no development db)
   desc "load dumped schema for test databases via db:schema:load --> parallel:load_schema[num_cpus]"
   task :load_schema, :count do |t,args|
-    puts args.inspect
     run_in_parallel('rake db:test:load', args)
   end
 
@@ -46,30 +45,5 @@ namespace :parallel do
       command = "#{executable} --type #{type} -n #{count} -p '#{file_pattern}' -r '#{Rails.root}' -o '#{options}'"
       abort unless system(command) # allow to chain tasks e.g. rake parallel:spec parallel:features
     end
-  end
-end
-
-#backwards compatability
-#spec:parallel:prepare
-#spec:parallel
-#test:parallel
-namespace :spec do
-  namespace :parallel do
-    task :prepare, :count do |t,args|
-      $stderr.puts "WARNING -- Deprecated!  use parallel:prepare"
-      Rake::Task['parallel:prepare'].invoke(args[:count])
-    end
-  end
-
-  task :parallel, :count, :path_prefix do |t,args|
-    $stderr.puts "WARNING -- Deprecated! use parallel:spec"
-    Rake::Task['parallel:spec'].invoke(args[:count], args[:path_prefix])
-  end
-end
-
-namespace :test do
-  task :parallel, :count, :path_prefix do |t,args|
-    $stderr.puts "WARNING -- Deprecated! use parallel:test"
-    Rake::Task['parallel:test'].invoke(args[:count], args[:path_prefix])
   end
 end
